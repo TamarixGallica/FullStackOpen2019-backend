@@ -28,34 +28,42 @@ let persons = [
 
 app.use(bodyParser.json());
 
-app.use(morgan('tiny'));
+morgan.token('person', (req, res) => JSON.stringify(req.body));
+
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :person'));
 
 app.get('/api/persons', (req, res) => {
     res.json(persons);
 });
 
 app.post('/api/persons', (req, res) => {
-  const newPerson = req.body;
+  const {name, number} = req.body;
+  console.log(name);
 
-  if(!newPerson.name) {
+  if(!name) {
     return res.status(400).json({
       error: 'name may not be empty'
     })
   }
 
-  if(!newPerson.number) {
+  if(!number) {
     return res.status(400).json({
       error: 'number may not be empty'
     })
   }
 
-  if(persons.find(person => person.name === newPerson.name)) {
+  if(persons.find(person => person.name === name)) {
     return res.status(400).json({
       error: 'name already exists'
     })
   };
 
-  newPerson.id = Math.floor(Math.random()*10000);
+  const id = Math.floor(Math.random()*10000);
+  const newPerson = {
+    name,
+    number,
+    id
+  };
   persons = persons.concat(newPerson);
   res.json(newPerson);
 })
