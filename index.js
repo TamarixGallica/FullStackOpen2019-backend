@@ -32,10 +32,29 @@ app.get('/api/persons', (req, res) => {
 });
 
 app.post('/api/persons', (req, res) => {
-  const person = req.body;
-  person.id = Math.floor(Math.random()*10000);
-  persons = persons.concat(person);
-  res.json(person);
+  const newPerson = req.body;
+
+  if(!newPerson.name) {
+    return res.status(400).json({
+      error: 'name may not be empty'
+    })
+  }
+
+  if(!newPerson.number) {
+    return res.status(400).json({
+      error: 'number may not be empty'
+    })
+  }
+
+  if(persons.find(person => person.name === newPerson.name)) {
+    return res.status(400).json({
+      error: 'name already exists'
+    })
+  };
+
+  newPerson.id = Math.floor(Math.random()*10000);
+  persons = persons.concat(newPerson);
+  res.json(newPerson);
 })
 
 app.get('/api/persons/:id', (req, res) => {
