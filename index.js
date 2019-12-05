@@ -3,6 +3,7 @@ const app = express();
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const cors = require('cors');
+const Person = require('./models/person');
 
 let persons = [
     {
@@ -38,7 +39,9 @@ morgan.token('person', (req, res) => JSON.stringify(req.body));
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :person'));
 
 app.get('/api/persons', (req, res) => {
-    res.json(persons);
+  Person.find({}).then(persons => {
+    res.json(persons.map(person => person.toJSON()))
+  })
 });
 
 app.post('/api/persons', (req, res) => {
@@ -57,31 +60,19 @@ app.post('/api/persons', (req, res) => {
     })
   }
 
-  if(persons.find(person => person.name === name)) {
-    return res.status(400).json({
-      error: 'name already exists'
-    })
-  };
-
-  const id = Math.floor(Math.random()*10000);
-  const newPerson = {
+  const newPerson = new Person({
     name,
     number,
-    id
-  };
-  persons = persons.concat(newPerson);
-  res.json(newPerson);
+  });
+
+  newPerson.save().then(savedPerson => {
+    res.json(savedPerson.toJSON());
+  })
 })
 
 app.get('/api/persons/:id', (req, res) => {
   const id = req.params.id;
-  const person = persons.find(person => person.id.toString() === id);
-  if(person) {
-    res.json(person);
-  }
-  else {
-    res.status(404).end();
-  }
+  Person.findById(id).then(person => { res.json(person.toJSON()) });
 });
 
 app.delete('/api/persons/:id', (req, res) => {
