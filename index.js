@@ -96,6 +96,20 @@ app.get('/api/persons/:id', (req, res, next) => {
   
 });
 
+app.put('/api/persons/:id', (req, res, next) => {
+  const id = req.params.id;
+  const body = req.body
+  const person = {
+    name: body.name,
+    number: body.number
+  }
+  Person.findByIdAndUpdate(id, person, { new: true })
+    .then(updatedPerson => { res.json(updatedPerson.toJSON()) })
+    .catch(error => {
+      next(error)
+    })
+})
+
 app.delete('/api/persons/:id', (req, res, next) => {
   const id = req.params.id;
 
