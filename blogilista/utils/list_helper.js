@@ -10,7 +10,21 @@ const totalLikes = (blogs) => {
   return blogs.reduce(reducer, 0);
 }
 
+const favoriteBlog = (blogs) => {
+  const compareLikes = (a, b) => a.likes - b.likes
+
+  if (blogs.length === 0) {
+    return null;
+  }
+
+  const copyBlogs = blogs.concat()
+  copyBlogs.sort(compareLikes)
+
+  return copyBlogs.pop()
+}
+
 module.exports = {
   dummy,
-  totalLikes
+  totalLikes,
+  favoriteBlog
 }
