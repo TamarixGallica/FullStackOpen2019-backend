@@ -46,9 +46,31 @@ const mostBlogs = (blogs) => {
   return result.pop()
 }
 
+const mostLikes = (blogs) => {
+  if(blogs.length === 0) {
+    return null
+  }
+
+  const blogsByAuthor = _.groupBy(blogs, 'author')
+
+  const blogsAndTotalLikes = []
+
+  _.forEach(blogsByAuthor, (blogs, author) => {
+    const authorAndLikes = {
+      author: author,
+      likes: _.sumBy(blogs, 'likes')
+    }
+
+    blogsAndTotalLikes.push(authorAndLikes)
+  })
+
+  return _.sortBy(blogsAndTotalLikes, (object) => object.likes).pop()
+}
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
-  mostBlogs
+  mostBlogs,
+  mostLikes
 }
