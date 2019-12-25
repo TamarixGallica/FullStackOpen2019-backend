@@ -49,6 +49,12 @@ describe('when blogs already exist in database', () => {
       
       expect(response.body.length).toBe(initialBlogs.length)
     })
+
+    test('identifier is returned in id field', async () => {
+        const response = await api.get('/api/blogs')
+
+        expect(response.body[0].id).toBeDefined()
+    })
   })
 })
 
