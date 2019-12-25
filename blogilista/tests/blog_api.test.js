@@ -26,6 +26,15 @@ const initialBlogs = [
   }
 ]
 
+const additionalBlogs = [
+  {
+    title: "First class tests",
+    author: "Robert C. Martin",
+    url: "http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll",
+    likes: 10,
+  }
+]
+
 beforeEach(async () => {
   await Blog.deleteMany({})
 
@@ -37,23 +46,55 @@ beforeEach(async () => {
 
 describe('when blogs already exist in database', () => {
   describe('/api/blogs', () => {
-    test('blogs are returned as json', async () => {
-      await api
-      .get('/api/blogs')
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-    })
-    
-    test('all blogs are returned', async () => {
-      const response = await api.get('/api/blogs')
+    describe('get', () => {
+      test('blogs are returned as json', async () => {
+        await api
+        .get('/api/blogs')
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      })
       
-      expect(response.body.length).toBe(initialBlogs.length)
+      test('all blogs are returned', async () => {
+        const response = await api.get('/api/blogs')
+        
+        expect(response.body.length).toBe(initialBlogs.length)
+      })
+      
+      test('identifier is returned in id field', async () => {
+        const response = await api.get('/api/blogs')
+        
+        expect(response.body[0].id).toBeDefined()
+      })
     })
 
-    test('identifier is returned in id field', async () => {
-        const response = await api.get('/api/blogs')
+    describe('post', () => {
+      test('added blog is returned as json', async () => {
+        await api
+        .post('/api/blogs')
+        .send(additionalBlogs[0])
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+      })
 
-        expect(response.body[0].id).toBeDefined()
+      test('properties for added blogs match', async () => {
+        const response = await api.post('/api/blogs').send(additionalBlogs[0])
+
+        const blog = response.body
+
+        expect(blog.title).toBe(additionalBlogs[0].title)
+        expect(blog.author).toBe(additionalBlogs[0].author)
+        expect(blog.url).toBe(additionalBlogs[0].url)
+        expect(blog.likes).toBe(additionalBlogs[0].likes)
+        expect(blog.id).toBeDefined()
+      })
+
+      test('number of blogs increases when new blog is added', async () => {
+        const originalCount = (await api.get('/api/blogs')).body.length
+        await api.post('/api/blogs').send(additionalBlogs[0])
+        const newCount = (await api.get('/api/blogs')).body.length
+
+        expect(newCount).toBe(originalCount + 1)
+      })
     })
   })
 })
