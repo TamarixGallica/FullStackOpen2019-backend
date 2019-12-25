@@ -35,6 +35,12 @@ const additionalBlogs = [
   }
 ]
 
+const blogWithoutLikes = {
+  title: "TDD harms architecture",
+  author: "Robert C. Martin",
+  url: "http://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html",
+}
+
 beforeEach(async () => {
   await Blog.deleteMany({})
 
@@ -49,31 +55,44 @@ describe('when blogs already exist in database', () => {
     describe('get', () => {
       test('blogs are returned as json', async () => {
         await api
-        .get('/api/blogs')
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
+          .get('/api/blogs')
+          .expect(200)
+          .expect('Content-Type', /application\/json/)
       })
-      
+
       test('all blogs are returned', async () => {
         const response = await api.get('/api/blogs')
-        
+
         expect(response.body.length).toBe(initialBlogs.length)
       })
-      
+
       test('identifier is returned in id field', async () => {
         const response = await api.get('/api/blogs')
-        
+
         expect(response.body[0].id).toBeDefined()
+      })
+
+      test('zero likes is returned if not set in database', async () => {
+        const newBlog = new Blog(blogWithoutLikes)
+
+        await newBlog.save()
+
+        const result = await api.get('/api/blogs')
+        const blogs = result.body
+
+        blogs.forEach((blog) => {
+          expect(blog.likes).toBeGreaterThanOrEqual(0)
+        })
       })
     })
 
     describe('post', () => {
       test('added blog is returned as json', async () => {
         await api
-        .post('/api/blogs')
-        .send(additionalBlogs[0])
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
+          .post('/api/blogs')
+          .send(additionalBlogs[0])
+          .expect(201)
+          .expect('Content-Type', /application\/json/)
       })
 
       test('properties for added blogs match', async () => {
@@ -94,6 +113,14 @@ describe('when blogs already exist in database', () => {
         const newCount = (await api.get('/api/blogs')).body.length
 
         expect(newCount).toBe(originalCount + 1)
+      })
+
+      test('likes are set to zero if not defined when adding', async () => {
+        const response = await api.post('/api/blogs').send(blogWithoutLikes)
+        
+        const blog = response.body
+
+        expect(blog.likes).toBe(0)
       })
     })
   })
