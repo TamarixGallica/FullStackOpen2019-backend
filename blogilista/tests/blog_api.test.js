@@ -146,6 +146,34 @@ describe('when blogs already exist in database', () => {
           .expect(400)
       })
     })
+
+    describe('delete', () => {
+      test('returns 404 when blog with specified id is not found', async () => {
+        const blog = await Blog.findOne({})
+        await blog.remove()
+        await api.delete(`/api/blogs/${blog._id}`)
+          .expect(404)
+      })
+
+      test('number of blogs decreases when a blog is deleted', async () => {
+        const blogToDelete = await Blog.findOne({})
+
+        const originalCount = await Blog.countDocuments({})
+
+        await api.delete(`/api/blogs/${blogToDelete._id}`)
+
+        const newCount = await Blog.countDocuments({})
+
+        expect(newCount).toBe(originalCount - 1)
+      })
+
+      test('returns 204 on successful deletion', async () => {
+        const blogToDelete = await Blog.findOne({})
+
+        await api.delete(`/api/blogs/${blogToDelete._id}`)
+          .expect(204)
+      })
+    })
   })
 })
 
