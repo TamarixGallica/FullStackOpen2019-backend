@@ -41,6 +41,19 @@ const blogWithoutLikes = {
   url: "http://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html",
 }
 
+const blogWithoutTitle = {
+  author: "Robert C. Martin",
+  url: "http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html",
+  likes: 2,
+}
+
+const blogWithoutUrl =   {
+  title: "Type wars",
+  author: "Robert C. Martin",
+  likes: 2,
+}
+
+
 beforeEach(async () => {
   await Blog.deleteMany({})
 
@@ -121,6 +134,16 @@ describe('when blogs already exist in database', () => {
         const blog = response.body
 
         expect(blog.likes).toBe(0)
+      })
+
+      test('returns 400 when title is not set', async () => {
+        await api.post('/api/blogs').send(blogWithoutTitle)
+          .expect(400)
+      })
+
+      test('returns 400 when url is not set', async () => {
+        await api.post('/api/blogs').send(blogWithoutUrl)
+          .expect(400)
       })
     })
   })
