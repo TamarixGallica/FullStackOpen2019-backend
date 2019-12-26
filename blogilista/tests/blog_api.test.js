@@ -147,6 +147,27 @@ describe('when blogs already exist in database', () => {
       })
     })
 
+    describe('update', () => {
+      test('returns 404 when blog to be updated is not found', async () => {
+        const blog = await Blog.findOne({})
+        await blog.remove()
+        await api.patch(`/api/blogs/${blog._id}`)
+          .expect(404)
+      })
+
+      test('returns 200 when number of likes for blog has been updated successfully', async () => {
+        const blog = await Blog.findOne({})
+        await api.patch(`/api/blogs/${blog._id}`)
+          .expect(200)
+      })
+
+      test('number of likes has been updated', async () => {
+        const blog = await Blog.findOne({})
+        const response = await api.patch(`/api/blogs/${blog._id}`).send({likes: blog.likes + 3})
+        expect(response.body.likes).toBe(blog.likes + 3)
+      })
+    })
+
     describe('delete', () => {
       test('returns 404 when blog with specified id is not found', async () => {
         const blog = await Blog.findOne({})

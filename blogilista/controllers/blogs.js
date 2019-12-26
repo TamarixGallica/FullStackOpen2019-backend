@@ -23,6 +23,29 @@ blogsRouter.post('/', async (request, response) => {
   return response.status(201).json(result)
 })
 
+blogsRouter.patch('/:id', async (request, response) => {
+
+  const blog = await Blog.findById(request.params.id)
+
+  if (blog === null) {
+    return response.status(404).end()
+  }
+
+  if (request.body.likes) {
+    blog.likes = request.body.likes
+  }
+
+  try {
+    await blog.save()
+  }
+  catch (exception) {
+    console.log(exception)
+    return response.status(500).json(exception.message)
+  }
+
+  return response.status(200).send(blog.toJSON())
+})
+
 blogsRouter.delete('/:id', async (request, response) => {
 
   const blog = await Blog.findById(request.params.id)
