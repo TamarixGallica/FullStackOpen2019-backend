@@ -107,6 +107,37 @@ describe('/api/users', () => {
 
       expect(userInDb.passwordHash).toBeDefined()
     })
+
+    test('returns 400 if username is not specified', async () => {
+      await api.post('/api/users').send({
+        name: newUser.name,
+        password: newUser.password
+      })
+        .expect(400)
+    })
+
+    test('returns 400 if password is not specified', async () => {
+      await api.post('/api/users').send({
+        username: newUser.username,
+        name: newUser.name
+      })
+        .expect(400)
+    })
+
+    test('returns 400 if password is too short', async () => {
+      await api.post('/api/users').send({
+        username: newUser.username,
+        name: newUser.name,
+        password: '12'
+      })
+        .expect(400)
+    })
+
+    test('returns 400 if user with the same username already exists', async () => {
+      await api.post('/api/users').send(newUser)
+      await api.post('/api/users').send(newUser)
+        .expect(400)
+    })
   })
 })
 
