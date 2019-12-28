@@ -54,6 +54,14 @@ describe('/api/users', () => {
         expect(user.blogs.length).toBe(0)
       }
     })
+
+    test('user id is not returned in blog entries', async () => {
+      const result = await api.get('/api/users')
+      const users = result.body
+
+      const user = users.shift()
+      user.blogs.forEach(blog => expect(blog.user).toBeUndefined())
+    })
   })
 
   describe('post', () => {

@@ -59,6 +59,14 @@ describe('when blogs already exist in database', () => {
           expect(blog.user.name).toBe(testhelper.initialUsers[0].name)
         })
       })
+
+      test('blogs are not returned in user entries', async () => {
+        const response = await api.get('/api/blogs')
+
+        const blogs = response.body
+
+        blogs.forEach(blog => expect(blog.user.blogs).toBeUndefined())
+      })
     })
 
     describe('post', () => {
