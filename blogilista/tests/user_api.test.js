@@ -3,35 +3,12 @@ const supertest = require('supertest')
 const app = require('../app')
 // const Blog = require('../models/blog')
 const User = require('../models/user')
+const testhelper = require('./testhelper')
 
 const api = supertest(app)
 
-const initialUsers = [
-  {
-    username: 'root',
-    name: 'Squareroot of all evil',
-    passwordHash: 'loremipsum'
-  },
-  {
-    username: 'briankottarainen',
-    name: 'Brian Kottarainen',
-    passwordHash: 'iddqdidkfa'
-  }
-]
-
-const newUser = {
-  username: 'britakottarainen',
-  name: 'Brita Kottarainen',
-  password: 'tinstafl'
-}
-
 beforeEach(async () => {
-  await User.deleteMany({})
-
-  const userObjects = initialUsers
-    .map(user => new User(user))
-  const promiseArray = userObjects.map(user => user.save())
-  await Promise.all(promiseArray)
+  await testhelper.initializeTestData()
 })
 
 describe('/api/users', () => {
@@ -58,13 +35,32 @@ describe('/api/users', () => {
         expect(user.name).toBe(userInDb.name)
       }
     })
+
+    test('returned number of blogs per user matches', async () => {
+      const result = await api.get('/api/users')
+      const users = result.body
+
+      let user = users.shift()
+      expect(user.blogs.length).toBeDefined()
+      expect(user.blogs.length).toBe(testhelper.initialBlogs.length)
+      
+      expect(user.blogs[0].author).toBe(testhelper.initialBlogs[0].author)
+      expect(user.blogs[0].title).toBe(testhelper.initialBlogs[0].title)
+      expect(user.blogs[0].url).toBe(testhelper.initialBlogs[0].url)
+      expect(user.blogs[0].likes).toBe(testhelper.initialBlogs[0].likes)
+      
+      while(user = users.shift()) {
+        expect(user.blogs.length).toBeDefined()
+        expect(user.blogs.length).toBe(0)
+      }
+    })
   })
 
   describe('post', () => {
     test('number of users increases when new user is added', async () => {
       const originalCount = await User.countDocuments({})
 
-      await api.post('/api/users').send(newUser)
+      await api.post('/api/users').send(testhelper.newUser)
 
       const newCount = await User.countDocuments({})
 
@@ -72,17 +68,17 @@ describe('/api/users', () => {
     })
 
     test('user properties are returned when user is added', async () => {
-      const result = await api.post('/api/users').send(newUser)
+      const result = await api.post('/api/users').send(testhelper.newUser)
 
       const user = result.body
 
-      expect(user.username).toBe(newUser.username)
-      expect(user.name).toBe(newUser.name)
+      expect(user.username).toBe(testhelper.newUser.username)
+      expect(user.name).toBe(testhelper.newUser.name)
       expect(user.id).toBeDefined()
     })
 
     test('user id is returned in id property instead of _id', async () => {
-      const result = await api.post('/api/users').send(newUser)
+      const result = await api.post('/api/users').send(testhelper.newUser)
 
       const user = result.body
 
@@ -91,7 +87,7 @@ describe('/api/users', () => {
     })
 
     test('password hash is not returned when user is added', async () => {
-      const result = await api.post('/api/users').send(newUser)
+      const result = await api.post('/api/users').send(testhelper.newUser)
 
       const user = result.body
 
@@ -99,7 +95,7 @@ describe('/api/users', () => {
     })
 
     test('password is hashed when user is added', async () => {
-      const result = await api.post('/api/users').send(newUser)
+      const result = await api.post('/api/users').send(testhelper.newUser)
 
       const user = result.body
 
@@ -110,32 +106,32 @@ describe('/api/users', () => {
 
     test('returns 400 if username is not specified', async () => {
       await api.post('/api/users').send({
-        name: newUser.name,
-        password: newUser.password
+        name: testhelper.newUser.name,
+        password: testhelper.newUser.password
       })
         .expect(400)
     })
 
     test('returns 400 if password is not specified', async () => {
       await api.post('/api/users').send({
-        username: newUser.username,
-        name: newUser.name
+        username: testhelper.newUser.username,
+        name: testhelper.newUser.name
       })
         .expect(400)
     })
 
     test('returns 400 if password is too short', async () => {
       await api.post('/api/users').send({
-        username: newUser.username,
-        name: newUser.name,
+        username: testhelper.newUser.username,
+        name: testhelper.newUser.name,
         password: '12'
       })
         .expect(400)
     })
 
     test('returns 400 if user with the same username already exists', async () => {
-      await api.post('/api/users').send(newUser)
-      await api.post('/api/users').send(newUser)
+      await api.post('/api/users').send(testhelper.newUser)
+      await api.post('/api/users').send(testhelper.newUser)
         .expect(400)
     })
   })

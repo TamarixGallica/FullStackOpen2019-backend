@@ -2,65 +2,12 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
+const testhelper = require('./testhelper')
 
 const api = supertest(app)
 
-const initialBlogs = [
-  {
-    title: "React patterns",
-    author: "Michael Chan",
-    url: "https://reactpatterns.com/",
-    likes: 7
-  },
-  {
-    title: "Go To Statement Considered Harmful",
-    author: "Edsger W. Dijkstra",
-    url: "http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html",
-    likes: 5
-  },
-  {
-    title: "Canonical string reduction",
-    author: "Edsger W. Dijkstra",
-    url: "http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
-    likes: 12
-  }
-]
-
-const additionalBlogs = [
-  {
-    title: "First class tests",
-    author: "Robert C. Martin",
-    url: "http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll",
-    likes: 10,
-  }
-]
-
-const blogWithoutLikes = {
-  title: "TDD harms architecture",
-  author: "Robert C. Martin",
-  url: "http://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html",
-}
-
-const blogWithoutTitle = {
-  author: "Robert C. Martin",
-  url: "http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html",
-  likes: 2,
-}
-
-const blogWithoutUrl =   {
-  title: "Type wars",
-  author: "Robert C. Martin",
-  likes: 2,
-}
-
-
 beforeEach(async () => {
-  await Blog.deleteMany({})
-
-  const blogObjects = initialBlogs
-    .map(blog => new Blog(blog))
-  const promiseArray = blogObjects.map(blog => blog.save())
-  await Promise.all(promiseArray)
+  await testhelper.initializeTestData()
 })
 
 describe('when blogs already exist in database', () => {
@@ -76,7 +23,7 @@ describe('when blogs already exist in database', () => {
       test('all blogs are returned', async () => {
         const response = await api.get('/api/blogs')
 
-        expect(response.body.length).toBe(initialBlogs.length)
+        expect(response.body.length).toBe(testhelper.initialBlogs.length)
       })
 
       test('identifier is returned in id field', async () => {
@@ -86,7 +33,7 @@ describe('when blogs already exist in database', () => {
       })
 
       test('zero likes is returned if not set in database', async () => {
-        const newBlog = new Blog(blogWithoutLikes)
+        const newBlog = new Blog(testhelper.blogWithoutLikes)
 
         await newBlog.save()
 
@@ -97,52 +44,78 @@ describe('when blogs already exist in database', () => {
           expect(blog.likes).toBeGreaterThanOrEqual(0)
         })
       })
+
+      test('user details are returned for each blog', async () => {
+        const response = await api.get('/api/blogs')
+
+        const blogs = response.body
+
+        blogs.forEach(blog => {
+          expect(blog.user).toBeDefined()
+          expect(blog.user.id).toBeDefined()
+          expect(blog.user.username).toBeDefined()
+          expect(blog.user.username).toBe(testhelper.initialUsers[0].username)
+          expect(blog.user.name).toBeDefined()
+          expect(blog.user.name).toBe(testhelper.initialUsers[0].name)
+        })
+      })
     })
 
     describe('post', () => {
       test('added blog is returned as json', async () => {
         await api
           .post('/api/blogs')
-          .send(additionalBlogs[0])
+          .send(testhelper.additionalBlogs[0])
           .expect(201)
           .expect('Content-Type', /application\/json/)
       })
 
       test('properties for added blogs match', async () => {
-        const response = await api.post('/api/blogs').send(additionalBlogs[0])
+        const response = await api.post('/api/blogs').send(testhelper.additionalBlogs[0])
 
         const blog = response.body
 
-        expect(blog.title).toBe(additionalBlogs[0].title)
-        expect(blog.author).toBe(additionalBlogs[0].author)
-        expect(blog.url).toBe(additionalBlogs[0].url)
-        expect(blog.likes).toBe(additionalBlogs[0].likes)
+        expect(blog.title).toBe(testhelper.additionalBlogs[0].title)
+        expect(blog.author).toBe(testhelper.additionalBlogs[0].author)
+        expect(blog.url).toBe(testhelper.additionalBlogs[0].url)
+        expect(blog.likes).toBe(testhelper.additionalBlogs[0].likes)
         expect(blog.id).toBeDefined()
       })
 
       test('number of blogs increases when new blog is added', async () => {
         const originalCount = (await api.get('/api/blogs')).body.length
-        await api.post('/api/blogs').send(additionalBlogs[0])
+        await api.post('/api/blogs').send(testhelper.additionalBlogs[0])
         const newCount = (await api.get('/api/blogs')).body.length
 
         expect(newCount).toBe(originalCount + 1)
       })
 
       test('likes are set to zero if not defined when adding', async () => {
-        const response = await api.post('/api/blogs').send(blogWithoutLikes)
+        const response = await api.post('/api/blogs').send(testhelper.blogWithoutLikes)
         
         const blog = response.body
 
         expect(blog.likes).toBe(0)
       })
 
+      test('user who added the blog is returned when adding', async () => {
+        const response = await api.post('/api/blogs').send(testhelper.additionalBlogs[0])
+
+        const blog = response.body
+
+        expect(blog.user).toBeDefined()
+        expect(blog.user.username).toBeDefined()
+        expect(blog.user.name).toBeDefined()
+        expect(blog.user.id).toBeDefined()
+      })
+
       test('returns 400 when title is not set', async () => {
-        await api.post('/api/blogs').send(blogWithoutTitle)
+        await api.post('/api/blogs').send(testhelper.blogWithoutTitle)
           .expect(400)
       })
 
       test('returns 400 when url is not set', async () => {
-        await api.post('/api/blogs').send(blogWithoutUrl)
+        await api.post('/api/blogs').send(testhelper.blogWithoutUrl)
           .expect(400)
       })
     })
