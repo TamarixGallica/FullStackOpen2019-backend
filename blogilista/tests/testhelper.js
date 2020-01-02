@@ -1,5 +1,7 @@
+const bcrypt = require('bcrypt')
 const Blog = require('../models/blog')
 const User = require('../models/user')
+const config = require('../utils/config')
 
 const initialBlogs = [
   {
@@ -53,12 +55,12 @@ const initialUsers = [
   {
     username: 'root',
     name: 'Squareroot of all evil',
-    passwordHash: 'loremipsum'
+    password: 'loremipsum'
   },
   {
     username: 'briankottarainen',
     name: 'Brian Kottarainen',
-    passwordHash: 'iddqdidkfa'
+    password: 'iddqdidkfa'
   }
 ]
 
@@ -71,8 +73,13 @@ const newUser = {
 const initializeTestData = async () => {
   await User.deleteMany({})
 
-  const userObjects = initialUsers
-    .map(user => new User(user))
+  const userObjects = await Promise.all(initialUsers
+    .map(async user => {
+      const { password, ...newUser } = user
+      newUser.passwordHash = await bcrypt.hash(password, config.SALTROUNDS);
+      return new User(newUser)
+    })
+  )
   const userPromiseArray = userObjects.map(user => user.save())
   const addedUsers = await Promise.all(userPromiseArray)
 
@@ -92,6 +99,8 @@ const initializeTestData = async () => {
   await addedUsers[0].save()
 }
 
+const createAuthenticationHeader = (header) => `Bearer ${header}`
+
 module.exports = {
   initialBlogs,
   additionalBlogs,
@@ -101,4 +110,5 @@ module.exports = {
   initialUsers,
   newUser,
   initializeTestData,
+  createAuthenticationHeader,
 }

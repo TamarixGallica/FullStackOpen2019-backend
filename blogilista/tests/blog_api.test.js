@@ -70,16 +70,29 @@ describe('when blogs already exist in database', () => {
     })
 
     describe('post', () => {
-      test('added blog is returned as json', async () => {
+      test('adding a blog without a valid token returns 401', async () => {
         await api
           .post('/api/blogs')
           .send(testhelper.additionalBlogs[0])
+          .expect(401)
+          .expect('Content-Type', /application\/json/)
+      })
+
+      test('added blog is returned as json', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+        await api
+          .post('/api/blogs')
+          .send(testhelper.additionalBlogs[0])
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
           .expect(201)
           .expect('Content-Type', /application\/json/)
       })
 
       test('properties for added blogs match', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
         const response = await api.post('/api/blogs').send(testhelper.additionalBlogs[0])
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
 
         const blog = response.body
 
@@ -91,23 +104,39 @@ describe('when blogs already exist in database', () => {
       })
 
       test('number of blogs increases when new blog is added', async () => {
-        const originalCount = (await api.get('/api/blogs')).body.length
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
+        let response = await api.get('/api/blogs')
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
+        const originalCount = response.body.length
+
         await api.post('/api/blogs').send(testhelper.additionalBlogs[0])
-        const newCount = (await api.get('/api/blogs')).body.length
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
+
+        response = await api.get('/api/blogs')
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
+
+        const newCount = response.body.length
 
         expect(newCount).toBe(originalCount + 1)
       })
 
       test('likes are set to zero if not defined when adding', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
         const response = await api.post('/api/blogs').send(testhelper.blogWithoutLikes)
-        
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
+
         const blog = response.body
 
         expect(blog.likes).toBe(0)
       })
 
       test('user who added the blog is returned when adding', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
         const response = await api.post('/api/blogs').send(testhelper.additionalBlogs[0])
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
 
         const blog = response.body
 
@@ -118,12 +147,18 @@ describe('when blogs already exist in database', () => {
       })
 
       test('returns 400 when title is not set', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
         await api.post('/api/blogs').send(testhelper.blogWithoutTitle)
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
           .expect(400)
       })
 
       test('returns 400 when url is not set', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
         await api.post('/api/blogs').send(testhelper.blogWithoutUrl)
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
           .expect(400)
       })
     })
