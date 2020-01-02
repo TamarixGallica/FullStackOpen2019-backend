@@ -186,18 +186,24 @@ describe('when blogs already exist in database', () => {
 
     describe('delete', () => {
       test('returns 404 when blog with specified id is not found', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
         const blog = await Blog.findOne({})
         await blog.remove()
         await api.delete(`/api/blogs/${blog._id}`)
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
           .expect(404)
       })
 
       test('number of blogs decreases when a blog is deleted', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
         const blogToDelete = await Blog.findOne({})
 
         const originalCount = await Blog.countDocuments({})
 
         await api.delete(`/api/blogs/${blogToDelete._id}`)
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
 
         const newCount = await Blog.countDocuments({})
 
@@ -205,10 +211,22 @@ describe('when blogs already exist in database', () => {
       })
 
       test('returns 204 on successful deletion', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[0])
+
         const blogToDelete = await Blog.findOne({})
 
         await api.delete(`/api/blogs/${blogToDelete._id}`)
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
           .expect(204)
+      })
+
+      test('returns 403 when user tries to delete a blog they haven\'t added', async () => {
+        const authResponse = await api.post('/api/login').send(testhelper.initialUsers[1])
+
+        const blogToDelete = await Blog.findOne({})
+        await api.delete(`/api/blogs/${blogToDelete._id}`)
+          .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
+          .expect(403)
       })
     })
   })
