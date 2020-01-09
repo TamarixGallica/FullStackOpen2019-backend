@@ -182,6 +182,15 @@ describe('when blogs already exist in database', () => {
         const response = await api.patch(`/api/blogs/${blog._id}`).send({likes: blog.likes + 3})
         expect(response.body.likes).toBe(blog.likes + 3)
       })
+
+      test('user details are returned when number of likes is updated', async () => {
+        const blog = await Blog.findOne({})
+        const response = await api.patch(`/api/blogs/${blog._id}`).send({likes: blog.likes + 3})
+        expect(response.body.user).toBeDefined()
+        expect(response.body.user.id).toBeDefined()
+        expect(response.body.user.username).toBeDefined()
+        expect(response.body.user.name).toBeDefined()
+      })
     })
 
     describe('delete', () => {

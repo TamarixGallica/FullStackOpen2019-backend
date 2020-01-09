@@ -65,7 +65,9 @@ blogsRouter.patch('/:id', async (request, response) => {
     return response.status(500).json(exception.message)
   }
 
-  return response.status(200).send(blog.toJSON())
+  const populatedBlog = await Blog.findById(blog.id).populate('user', ['username', 'name', 'id'])
+
+  return response.status(200).send(populatedBlog.toJSON())
 })
 
 blogsRouter.delete('/:id', async (request, response) => {
