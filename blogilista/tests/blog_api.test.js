@@ -67,6 +67,21 @@ describe('when blogs already exist in database', () => {
 
         blogs.forEach(blog => expect(blog.user.blogs).toBeUndefined())
       })
+
+      test('comments are returned for each blog', async () => {
+        const response = await api.get('/api/blogs')
+
+        const blogs = response.body
+
+        blogs.forEach(blog => {
+          expect(blog.comments).toBeDefined()
+        })
+
+        const firstBlog = blogs[0]
+        expect(firstBlog.comments.length).toBe(2)
+        expect(firstBlog.comments[0]).toBe(testhelper.initialBlogs[0].comments[0])
+        expect(firstBlog.comments[1]).toBe(testhelper.initialBlogs[0].comments[1])
+      })
     })
 
     describe('post', () => {
@@ -101,6 +116,8 @@ describe('when blogs already exist in database', () => {
         expect(blog.url).toBe(testhelper.additionalBlogs[0].url)
         expect(blog.likes).toBe(testhelper.additionalBlogs[0].likes)
         expect(blog.id).toBeDefined()
+        expect(blog.comments.length).toBe(testhelper.additionalBlogs[0].comments.length)
+        expect(blog.comments[0]).toBe(testhelper.additionalBlogs[0].comments[0])
       })
 
       test('number of blogs increases when new blog is added', async () => {
@@ -160,6 +177,24 @@ describe('when blogs already exist in database', () => {
         await api.post('/api/blogs').send(testhelper.blogWithoutUrl)
           .set('Authorization', testhelper.createAuthenticationHeader(authResponse.body.token))
           .expect(400)
+      })
+
+      test('number of comments is increases when new comment is added', async () => {
+        const blog = await Blog.findOne({})
+
+        const response = await api.post(`/api/blogs/${blog.id}/comments`).send({comment: 'Test comment'})
+          .expect(201)
+
+        expect(response.body.comments.length).toBe(blog.comments.length + 1)
+      })
+
+      test('added comment is returned when new comment is added', async () => {
+        const blog = await Blog.findOne({})
+
+        const response = await api.post(`/api/blogs/${blog.id}/comments`).send({comment: 'Testy comment'})
+          .expect(201)
+
+        expect(response.body.comments.pop()).toBe('Testy comment')
       })
     })
 

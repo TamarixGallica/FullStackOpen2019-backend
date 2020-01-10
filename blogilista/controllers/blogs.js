@@ -70,6 +70,26 @@ blogsRouter.patch('/:id', async (request, response) => {
   return response.status(200).send(populatedBlog.toJSON())
 })
 
+blogsRouter.post('/:id/comments', async (request, response, next) => {
+  const blog = await Blog.findById(request.params.id)
+
+  if (blog === null) {
+    return response.status(404).end()
+  }
+
+  blog.comments.push(request.body.comment)
+
+  try {
+    await blog.save()
+  }
+  catch (exception) {
+    console.log(exception)
+    return response.status(500).json(exception.message)
+  }
+
+  return response.status(201).send(blog.toJSON())
+})
+
 blogsRouter.delete('/:id', async (request, response) => {
 
   const decodedToken = jwt.verify(request.token, config.SECRET)

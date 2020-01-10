@@ -8,7 +8,11 @@ const initialBlogs = [
     title: "React patterns",
     author: "Michael Chan",
     url: "https://reactpatterns.com/",
-    likes: 7
+    likes: 7,
+    comments: [
+      "Fascinating stuff!",
+      "Beats sleeping pills easily"
+    ]
   },
   {
     title: "Go To Statement Considered Harmful",
@@ -30,6 +34,9 @@ const additionalBlogs = [
     author: "Robert C. Martin",
     url: "http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll",
     likes: 10,
+    comments: [
+      "Seems like a first world problem"
+    ]
   }
 ]
 
